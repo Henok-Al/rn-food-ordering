@@ -1,67 +1,42 @@
-const Order = require('../models/Order');
+const Order = require("../models/Order");
+const MenuItem = require("../models/MenuItem");
 
-// Create a new order
-const createOrder = async (req, res) => {
+// POST /order
+exports.createOrder = async (req, res) => {
   try {
-    const order = new Order(req.body);
-    const savedOrder = await order.save();
-    res.status(201).json(savedOrder);
+    const { items } = req.body;
+
+    let totalPrice = 0;
+
+    for (const orderItem of items) {
+      const menuItem = await MenuItem.findById(orderItem.id);
+      if (!menuItem) return res.status(404).json({ message: "Menu item not found" });
+
+      totalPrice += menuItem.price * orderItem.quantity;
+    }
+
+    const newOrder = new Order({
+      items: items.map(i => ({ menuItem: i.id, quantity: i.quantity })),
+      totalPrice
+    });
+
+    await newOrder.save();
+    res.status(201).json(newOrder);
   } catch (err) {
-    res.status(400).json({ error: err.message });  }
+    res.status(400).json({ error: err.message });
+  }
 };
 
-// Get all orders
-// const getOrders = async (req, res) => {
-//   try {
-//     const orders = await Order.find();
-//     res.json(orders);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
-
-// Get order by ID
-const getOrderById = async (req, res) => {
+// GET /order/:id
+exports.getOrder = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id);
-    if (!order) return res.status(404).json({ error: 'Order not found' });
+    const order = await Order.findById(req.params.id).populate("items.menuItem");
+    if (!order) return res.status(404).json({ message: "Order not found" });
     res.json(order);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// // Update order status
-// const updateOrderStatus = async (req, res) => {
-//   try {
-//     const { status } = req.body;
-//     const updated = await Order.findByIdAndUpdate(
-//       req.params.id,
-//       { status },
-//       { new: true }
-//     );
-//     if (!updated) return res.status(404).json({ error: 'Order not found' });
-//     res.json(updated);
-//   } catch (err) {
-//     res.status(400).json({ error: err.message });
-//   }
-// };
 
-// // Delete an order
-// const deleteOrder = async (req, res) => {
-//   try {
-//     const deleted = await Order.findByIdAndDelete(req.params.id);
-//     if (!deleted) return res.status(404).json({ error: 'Order not found' });
-//     res.json({ message: 'Order deleted successfully' });
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
 
-module.exports = {
-  createOrder,
-  // getOrders,
-  getOrderById,
-  // updateOrderStatus,
-  // deleteOrder
-};

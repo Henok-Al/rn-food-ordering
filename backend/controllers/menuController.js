@@ -1,137 +1,36 @@
-const Menu = require("../models/MenuItem");
-
-const getAllMenus = async (req, res) => {
+const MenuItem = require("../models/MenuItem.js");
+// GET /menu
+exports.getMenu = async (req, res) => {
   try {
-    const allMenus = await Menu.find({});
-    if (allMenus?.length > 0) {
-      res.status(200).json({
-        success: true,
-        message: "List of menus fetched successfully",
-        data: allMenus,
-      });
-    } else {
-      res.status(404).json({
-        success: false,
-        message: "Bo menus found in collection",
-      });
-    }
-  } catch (e) {
-    console.log(e);
-    res.status(500).json({
-      success: false,
-      message: "Something went wrong! Please try again",
-    });
+    const menu = await MenuItem.find();
+    res.json(menu);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 
-const getSingleMenuById = async (req, res) => {
+// GET /menu/:id
+exports.getMenuItem = async (req, res) => {
   try {
-    const getCurrentMenuID = req.params.id;
-    const menuDetailsByID = await Menu.findById(getCurrentMenuID);
-
-    if (!menuDetailsByID) {
-      return res.status(404).json({
-        success: false,
-        message:
-          "Menu with the current ID is not found! Please try with a different ID",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: menuDetailsByID,
-    });
-  } catch (e) {
-    console.log(e);
-    res.status(500).json({
-      success: false,
-      message: "Something went wrong! Please try again",
-    });
+    const item = await MenuItem.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: "Item not found" });
+    res.json(item);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 
-const addNewMenu = async (req, res) => {
+// POST /menu (optional)
+exports.addMenuItem = async (req, res) => {
   try {
-    const newMenuFormData = req.body;
-    const newlyCreatedMenu = await Menu.create(newMenuFormData);
-    if (newMenuFormData) {
-      res.status(201).json({
-        success: true,
-        message: "Menu added successfully",
-        data: newlyCreatedMenu,
-      });
-    }
-  } catch (e) {
-    console.log(e);
-    res.status(500).json({
-      success: false,
-      message: "Something went wrong! Please try again",
-    });
+    const newItem = new MenuItem(req.body);
+    await newItem.save();
+    res.status(201).json(newItem);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 };
 
-const updateMenu = async (req, res) => {
-  try {
-    const updatedMenuFormData = req.body;
-    const getCurrentMenuID = req.params.id;
-    const updatedMenu = await Menu.findByIdAndUpdate(
-      getCurrentMenuID,
-      updatedMenuFormData,
-      {
-        new: true,
-      }
-    );
 
-    if (!updatedMenu) {
-      res.status(404).json({
-        success: false,
-        message: "Menu is not found with this ID",
-      });
-    }
 
-    res.status(200).json({
-      success: true,
-      message: "Menu updated successfully",
-      data: updatedMenu,
-    });
-  } catch (e) {
-    console.log(e);
-    res.status(500).json({
-      success: false,
-      message: "Something went wrong! Please try again",
-    });
-  }
-};
 
-const deleteMenu = async (req, res) => {
-  try {
-    const getCurrentMenuID = req.params.id;
-    const deletedMenu = await Menu.findByIdAndDelete(getCurrentMenuID);
-
-    if (!deletedMenu) {
-      res.status(404).json({
-        success: false,
-        message: "Menu is not found with this ID",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: deletedMenu,
-    });
-  } catch (e) {
-    console.log(e);
-    res.status(500).json({
-      success: false,
-      message: "Something went wrong! Please try again",
-    });
-  }
-};
-
-module.exports = {
-  getAllMenus,
-  getSingleMenuById,
-  addNewMenu,
-  updateMenu,
-  deleteMenu,
-};
