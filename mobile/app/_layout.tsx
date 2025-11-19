@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { CartProvider } from '@/hooks/useCart';
+import { CartProvider } from '../context/CartContext';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();

@@ -1,51 +1,52 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 const connectDB = require("./config/db");
+const logger = require("./src/utils/logger");
 
+// Load env vars
 dotenv.config();
+
+// Connect to database
 connectDB();
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+
+// Security Middleware
+app.use(helmet()); // Set security headers
+app.use(cors()); // Enable CORS
+app.use(express.json()); // Body parser
+
+// Rate Limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: "Too many requests from this IP, please try again later."
+});
+app.use(limiter);
+
+// Request Logging Middleware
+app.use((req, res, next) => {
+    logger.info(`${req.method} ${req.url}`, { ip: req.ip });
+    next();
+});
 
 // Routes
-app.use("/menu", require("./routes/menuRoutes"));
-app.use("/order", require("./routes/orderRoutes"));
+app.use("/api/v1/menu", require("./src/catalog/menuRoutes"));
+app.use("/api/v1/orders", require("./src/ordering/orderRoutes"));
+
+// Basic Health Check
+app.get("/health", (req, res) => {
+    res.status(200).json({ status: "UP", timestamp: new Date() });
+});
+
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+    logger.error(err.message, { stack: err.stack });
+    res.status(500).json({ error: "Server Error" });
+});
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-
-
-
-
-
-
-// require("dotenv").config();
-// const express = require("express");
-// const connectToDB = require("./config/db");
-// const menuRoutes = require("./routes/menuRoutes");
-// const orderRoutes = require("./routes/orderRoutes");
-
-// const app = express();
-// const PORT = process.env.PORT || 3000;
-
-// //connect to our database
-// connectToDB();
-
-// //middleware -> express.json()
-// app.use(express.json());
-
-
-
-// //routes here
-// app.use('/menu', menuRoutes);
-// app.use('/order', orderRoutes);
-
-
-
-
-// app.listen(PORT, () => {
-//   console.log(`Server is now running on port ${PORT}`);
-// });
+app.listen(PORT, () => logger.info(`🚀 Server running on port ${PORT}`));

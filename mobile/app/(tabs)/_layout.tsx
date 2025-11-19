@@ -1,12 +1,13 @@
+
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/Colors';
-import { useCart } from '../../hooks/useCart';
+import { COLORS } from '../../constants/theme';
+import { useCart } from '../../context/CartContext';
 import { View, Text, StyleSheet } from 'react-native';
 
 function TabBarBadge({ count }: { count: number }) {
   if (count === 0) return null;
-  
+
   return (
     <View style={styles.badge}>
       <Text style={styles.badgeText}>{count > 99 ? '99+' : count}</Text>
@@ -15,24 +16,24 @@ function TabBarBadge({ count }: { count: number }) {
 }
 
 export default function TabLayout() {
-  const { getTotalItems } = useCart();
-  const cartItemCount = getTotalItems();
+  const { items } = useCart();
+  const cartItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.gray[500],
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: COLORS.textSecondary,
         headerStyle: {
-          backgroundColor: Colors.primary,
+          backgroundColor: COLORS.primary,
         },
-        headerTintColor: Colors.white,
+        headerTintColor: COLORS.textLight,
         headerTitleStyle: {
           fontWeight: 'bold',
         },
         tabBarStyle: {
-          backgroundColor: Colors.white,
-          borderTopColor: Colors.border,
+          backgroundColor: COLORS.cardBackground,
+          borderTopColor: COLORS.gray,
         },
       }}
     >
@@ -59,6 +60,16 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="add-menu"
+        options={{
+          title: 'Add Item',
+          headerTitle: 'Add Menu Item',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle-outline" size={size} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
@@ -68,7 +79,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: -6,
     top: -3,
-    backgroundColor: Colors.error,
+    backgroundColor: COLORS.error,
     borderRadius: 10,
     minWidth: 20,
     height: 20,
@@ -76,7 +87,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   badgeText: {
-    color: Colors.white,
+    color: COLORS.textLight,
     fontSize: 12,
     fontWeight: 'bold',
   },
