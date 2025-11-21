@@ -15,7 +15,13 @@ connectDB();
 const app = express();
 
 // Security Middleware
-app.use(helmet()); // Set security headers
+app.use(helmet({
+    hsts: {
+        maxAge: 31536000, // 1 year in seconds
+        includeSubDomains: true,
+        preload: true
+    }
+})); // Set security headers with HSTS
 app.use(cors()); // Enable CORS
 app.use(express.json()); // Body parser
 
@@ -33,9 +39,15 @@ app.use((req, res, next) => {
     next();
 });
 
+const http = require('http');
+const socketIO = require('socket.io');
+
 // Routes
-app.use("/api/v1/menu", require("./src/catalog/menuRoutes"));
-app.use("/api/v1/orders", require("./src/ordering/orderRoutes"));
+app.use("/api/v1/auth", require("./src/routes/authRoutes"));
+app.use("/api/v1/restaurants", require("./src/routes/restaurantRoutes"));
+app.use("/api/v1/menu", require("./src/routes/menuRoutes"));
+app.use("/api/v1/orders", require("./src/routes/orderRoutes"));
+app.use("/api/v1/payments", require("./src/routes/paymentRoutes"));
 
 // Basic Health Check
 app.get("/health", (req, res) => {
@@ -48,5 +60,19 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: "Server Error" });
 });
 
+const server = http.createServer(app);
+const io = socketIO(server, {
+    cors: {
+        origin: "*", // Allow all origins for now, restrict in production
+        methods: ["GET", "POST"]
+    }
+});
+
+// Make io accessible in routes
+app.set('io', io);
+
+// Initialize Socket.io handler
+require('./src/socket/socketHandler')(io);
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => logger.info(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () => logger.info(`🚀 Server running on port ${PORT}`));
